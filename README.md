@@ -1,4 +1,4 @@
-# DAPS: Twitch alpha=5
+# DAPS: Drift-Aware Prototype Stabilization for Federated Graph Learning Under Domain Shift
 
 This repository contains only the code path required to run DAPS on the Twitch federated graph benchmark with the paper's alpha=5 client allocation. It excludes dataset files, unrelated dataset and baseline code, result files, logs, and checkpoints.
 
