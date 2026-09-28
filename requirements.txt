@@ -1,0 +1,12 @@
+torch
+torchvision
+torch-geometric
+torch-scatter
+torch-sparse
+pyro-ppl
+scipy
+scikit-learn
+networkx
+tqdm
+setproctitle
+

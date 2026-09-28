@@ -1,0 +1,25 @@
+{
+  "dataset": "fl_twitch",
+  "alpha": 5,
+  "clients": {"DE": 10, "EN": 2, "ES": 2, "FR": 2, "PT": 2, "RU": 2, "total": 20},
+  "model": "fggp",
+  "backbone": "pmlp_gcn",
+  "hidden_dim": 128,
+  "communication_rounds": 200,
+  "local_epochs": 6,
+  "local_learning_rate": 0.03,
+  "optimizer": "SGD",
+  "optimizer_momentum": 0.9,
+  "weight_decay": 0.00001,
+  "daps": {
+    "lambda_A": 0.0003,
+    "anchor_momentum": 0.6,
+    "warmup_rounds": 5,
+    "anchor_temperature": 0.3,
+    "confidence_threshold": 0.75,
+    "drift_temperature": 0.75
+  },
+  "seed_example": 100,
+  "reported_metric": "mean accuracy over final 5 communication rounds"
+}
+
