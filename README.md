@@ -10,7 +10,7 @@ This repository contains only the code path required to run DAPS on the Twitch f
 - Backbone: PMLP-GCN, hidden dimension 128.
 - Training: 200 communication rounds, 6 local epochs, full client participation, node-count-weighted FedAvg.
 - Optimizer: SGD, momentum 0.9, weight decay 1e-5.
-- DAPS settings from `论文9.24/supplementary_material.tex`: local learning rate 0.030, ALPR weight 0.0003, anchor momentum 0.60, warm-up 5, anchor temperature 0.30, confidence threshold 0.75, drift temperature 0.75.
+- DAPS settings: local learning rate 0.030, ALPR weight 0.0003, anchor momentum 0.60, warm-up 5, anchor temperature 0.30, confidence threshold 0.75, drift temperature 0.75.
 - Reported score: mean accuracy over the final five communication rounds.
 
 These paper settings are the CLI defaults in this release. The command below repeats them explicitly for clarity:
