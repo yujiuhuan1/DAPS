@@ -1,13 +1,7 @@
-from argparse import Namespace
+from .twitch import FedTwitch
 
-from datasets.twitch import FedTwitch
-
-Priv_NAMES = {FedTwitch.NAME: FedTwitch}
-Pub_NAMES = {}
+Priv_NAMES = {'fl_twitch': FedTwitch}
 
 
-def get_prive_dataset(args: Namespace) -> FedTwitch:
-    if args.dataset != FedTwitch.NAME:
-        raise ValueError(f"This release supports only {FedTwitch.NAME!r}.")
-    return FedTwitch(args)
-
+def get_prive_dataset(args):
+    return Priv_NAMES[args.dataset](args)

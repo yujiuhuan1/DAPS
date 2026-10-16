@@ -143,4 +143,3 @@ class CsvWriter:
             pickle.dump(loss_dict, f)
             f.close()
 
-

@@ -1,3 +1,4 @@
+import os
 import copy
 
 import scipy as sp
@@ -44,8 +45,8 @@ def global_evaluate(model: FederatedModel, test_dl: DataLoader, setting: str, na
                 logits = model.eval_knn(feat)
             else:
                 logits = net(graph)
-        preds = logits[graph.test_mask]
-        labels = graph.y[graph.test_mask]
+        preds = logits[graph.test_mask + graph.val_mask]
+        labels = graph.y[graph.test_mask + graph.val_mask]
         acc, auc = get_scores(preds, labels, dl.data_name)
         accs.append(acc)
     net.train(status)
@@ -81,12 +82,40 @@ def train(model: FederatedModel, private_dataset: FederatedDataset,
         csv_writer = CsvWriter(args, private_dataset)
 
     model.N_CLASS = private_dataset.N_CLASS
-    selected_domain_dict = private_dataset.domain_dict
-    selected_domain_list = []
-    for domain, client_count in selected_domain_dict.items():
-        selected_domain_list.extend([domain] * client_count)
-    selected_domain_list = np.random.permutation(selected_domain_list)
-    result = Counter(selected_domain_list)
+    domains_list = private_dataset.DOMAINS_LIST
+    domains_len = len(domains_list)
+
+    if args.rand_dataset:
+        max_num = 10
+        is_ok = False
+
+        while not is_ok:
+            if model.args.dataset == 'fl_officecaltech':
+                selected_domain_list = np.random.choice(domains_list, size=args.parti_num - domains_len, replace=True, p=None)
+                selected_domain_list = list(selected_domain_list) + domains_list
+            elif model.args.dataset == 'fl_digits':
+                selected_domain_list = np.random.choice(domains_list, size=args.parti_num, replace=True, p=None)
+
+            result = dict(Counter(selected_domain_list))
+
+            for k in result:
+                if result[k] > max_num:
+                    is_ok = False
+                    break
+            else:
+                is_ok = True
+
+    else:
+        selected_domain_dict = private_dataset.domain_dict
+        selected_domain_list = []
+        for k in selected_domain_dict:
+            domain_num = selected_domain_dict[k]
+            for i in range(domain_num):
+                selected_domain_list.append(k)
+
+        selected_domain_list = np.random.permutation(selected_domain_list)
+
+        result = Counter(selected_domain_list)
 
     pri_train_loaders, test_loaders = private_dataset.get_data_loaders(result)
     # print("diffusing....")
@@ -128,7 +157,7 @@ def train(model: FederatedModel, private_dataset: FederatedDataset,
                 accs_dict[i].append(accs[i])
             else:
                 accs_dict[i] = [accs[i]]
-        if epoch_index >= Epoch - 500:
+        if epoch_index >= Epoch - 5:
             print('-' * 80)
             print('The ' + str(epoch_index) + ' Communication Accuracy:', str(mean_acc), 'Method:',
                   model.args.model)
@@ -139,6 +168,13 @@ def train(model: FederatedModel, private_dataset: FederatedDataset,
     print('-' * 80)
     print('Final Communication Accuracy (last 5 epochs):', str(final_mean_acc), 'Method:', model.args.model)
     print('-' * 80)
+
+    if getattr(args, 'anchor_drift_file', ''):
+        directory = os.path.dirname(args.anchor_drift_file)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        np.save(args.anchor_drift_file, np.asarray(model.anchor_drift_history, dtype=np.float64))
+        print('Saved round-wise anchor drift:', args.anchor_drift_file)
 
     if args.csv_log:
         csv_writer.write_acc(accs_dict, mean_accs_list)
@@ -156,4 +192,3 @@ def scipysp_to_pytorchsp(sp_mx):
     pyt_sp_mx = torch.sparse.FloatTensor(torch.LongTensor(coords.T), torch.FloatTensor(values), torch.Size(shape))
 
     return pyt_sp_mx
-

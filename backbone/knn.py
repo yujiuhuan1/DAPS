@@ -157,4 +157,3 @@ def moment_update(model, model_ema, m):
     for p1, p2 in zip(model.module.encoder.parameters(), model_ema.parameters()):
         p2.data.mul_(m).add_(1 - m, p1.detach().data)
 
-

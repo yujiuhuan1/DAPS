@@ -120,4 +120,3 @@ class FederatedModel(nn.Module):
         for _, net in enumerate(nets_list):
             net.load_state_dict(global_net.state_dict())
 
-

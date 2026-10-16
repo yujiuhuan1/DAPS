@@ -1,11 +1,12 @@
 import torch
-from torch_geometric.utils import add_self_loops, remove_self_loops, to_undirected
-from torch_geometric.utils import dropout_adj
 import numpy as np
 import networkx as nx
 from torch_geometric.utils import to_networkx, from_networkx
+from torch_geometric.utils import add_self_loops, remove_self_loops, to_undirected, dropout_adj
 
 EPSILON = 1e-5
+
+
 class RandomSplitter:
     """
     Split Data into small data via random sampling.
@@ -23,7 +24,7 @@ class RandomSplitter:
                  client_num,
                  sampling_rate=None,
                  overlapping_rate=0,
-                 drop_edge=0,missing_link = 0,percent=20):
+                 drop_edge=0,missing_link = 0,percent=30):
         self.client_num = percent
         self.client_num_need = client_num
         self.ovlap = overlapping_rate
@@ -136,5 +137,3 @@ class RandomSplitter:
         global_dataset = global_graph
         graphs = graphs[:self.client_num_need]
         return graphs,global_dataset
-
-

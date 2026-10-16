@@ -7,11 +7,9 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-conf_path = os.getcwd()
-sys.path.append(conf_path)
-sys.path.append(conf_path + '/datasets')
-sys.path.append(conf_path + '/backbone')
-sys.path.append(conf_path + '/models')
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from datasets import Priv_NAMES as DATASET_NAMES
 from models import get_all_models
 from argparse import ArgumentParser
@@ -28,7 +26,7 @@ import datetime
 
 
 def parse_args():
-    parser = ArgumentParser(description='You Only Need Me', allow_abbrev=False)
+    parser = ArgumentParser(description='DAPS on Twitch', allow_abbrev=False)
     parser.add_argument('--device_id', type=int, default=0, help='The Device Id for Experiment')
 
     # -------------------- communication_epoch  ---------------------
@@ -46,13 +44,13 @@ def parse_args():
 
 
     # --------------------  Backbone ---------------------
-    parser.add_argument('--backbone', default='pmlp_gcn', type=str, help='Backbone')#choices=['gcn','gat','gpr',"pmlp_gcn"]
+    parser.add_argument('--backbone', default='pmlp_gcn', type=str, choices=['pmlp_gcn', 'gcn'], help='Backbone')
     # --------------------  Backbone ---------------------
 
 
 
     # --------------------  model ---------------------
-    parser.add_argument('--model', type=str, default='fggp',  # fedavg
+    parser.add_argument('--model', type=str, default='fggp',
                         help='Model name.', choices=get_all_models())
     # --------------------  model ---------------------
 
@@ -74,6 +72,13 @@ def parse_args():
 
     parser.add_argument('--ema', type=float, default=0.9, help='ema for momentum update')
 
+    parser.add_argument('--daps_rel', type=int, choices=[1], default=1,
+                        help='Enable paper reliability-aware prototype extraction and aggregation.')
+    parser.add_argument('--daps_drift', type=int, choices=[1], default=1,
+                        help='Enable paper drift-aware temporal anchor updates.')
+    parser.add_argument('--daps_alpr', type=int, choices=[1], default=1,
+                        help='Enable paper anchor-guided local prototype regularization.')
+
     parser.add_argument('--daps_lambda', type=float, default=0.0003,
                         help='Loss weight for Drift-Aware Prototype Stabilization.')
     parser.add_argument('--daps_momentum', type=float, default=0.60,
@@ -90,40 +95,25 @@ def parse_args():
     # --------------------  method setting ---------------------
 
 
-    parser.add_argument('--use_att', type=bool, default=False, help='use conv for training')
-    parser.add_argument('--train_conv', type=bool, default=True, help='use conv for training')
     parser.add_argument('--local_epoch', type=int, default=6, help='The Local Epoch for each Participant')
-    parser.add_argument('--local_lr', type=float, default=0.030, help='Twitch alpha=5 local learning rate')
+    parser.add_argument('--local_lr', type=float, default=0.03, help='local_Lr')
 
 
     parser.add_argument('--parti_num', type=int, default=10, help='The Number for Participants')
-    parser.add_argument('--depth', type=int, default=2, help='The backbone depth')
     parser.add_argument('--seed', type=int, default=100, help='The random seed.')
+    parser.add_argument('--rand_dataset', type=bool, default=False, help='The random seed.')
 
 
     parser.add_argument('--structure', type=str, default='homogeneity')
 
-    parser.add_argument('--pri_aug', type=str, default='weak',  # weak strong
-                        help='Augmentation for Private Data')
     parser.add_argument('--online_ratio', type=float, default=1, help='The Ratio for Online Clients')
-    parser.add_argument('--learning_decay', type=bool, default=False, help='The Option for Learning Rate Decay')
     parser.add_argument('--averaing', type=str, default='weight', help='The Option for averaging strategy')
-    parser.add_argument('--mu', type=float, default=0.01, help='')
 
     parser.add_argument('--infoNCET', type=float, default=0.02, help='The InfoNCE temperature')
-    parser.add_argument('--T', type=float, default=0.05, help='The Knowledge distillation temperature')
-    parser.add_argument('--weight', type=int, default=1, help='The Wegith for the distillation loss')
-    parser.add_argument('--mu_moon', type=float, default=5, help='The Wegith for the distillation loss')
-    parser.add_argument('--temperature_moon', type=float, default=0.5, help='The Wegith for moon')
-    parser.add_argument('--reserv_ratio', type=float, default=0.1, help='Reserve ratio for prototypes')
     torch.set_num_threads(4)
     add_management_args(parser)
     args = parser.parse_args()
 
-    # best = best_args[args.dataset][args.model]
-
-    # for key, value in best.items():
-    #     setattr(args, key, value)
 
     if args.seed is not None:
         set_random_seed(args.seed)
@@ -165,4 +155,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-

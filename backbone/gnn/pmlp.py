@@ -1,9 +1,10 @@
 from re import S
 from xml.dom import xmlbuilder
-import pyro
+
 import scipy as sp
 import torch
 import torch.nn as nn
+import pyro
 import torch.nn.functional as F
 from torch_sparse import SparseTensor, matmul
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
@@ -534,8 +535,9 @@ class Augmentor(nn.Module):
         edge_probs = adj_logits / (torch.max(adj_logits) + 1e-6 )
         edge_probs = self.alpha * edge_probs + (1-self.alpha) * adj_orig
 
-        # Straight-through relaxed Bernoulli sampling without the external pyro dependency.
+        # Gumbel-Softmax Sampling
         adj_sampled = pyro.distributions.RelaxedBernoulliStraightThrough(temperature=self.temp, probs=edge_probs).rsample()
+        adj_sampled = adj_sampled.triu(1)
         adj_sampled = adj_sampled + adj_sampled.T
 
         adj_sampled.fill_diagonal_(1)
@@ -576,4 +578,3 @@ def scipysp_to_pytorchsp(sp_mx):
     pyt_sp_mx = torch.sparse.FloatTensor(torch.LongTensor(coords.T), torch.FloatTensor(values), torch.Size(shape))
 
     return pyt_sp_mx
-

@@ -1,4 +1,7 @@
 import os
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 import random
 import torch
 import numpy as np
@@ -9,15 +12,15 @@ def get_device(device_id) -> torch.device:
 
 
 def data_path() -> str:
-    return os.path.join(os.getcwd(),'datasets/data/')
+    return str(PROJECT_ROOT / 'datasets' / 'data') + os.sep
 
 
 def base_path() -> str:
-    return './data/'
+    return str(PROJECT_ROOT / 'data') + os.sep
 
 
 def checkpoint_path() -> str:
-    return './checkpoint/'
+    return str(PROJECT_ROOT / 'checkpoint') + os.sep
 
 
 def set_random_seed(seed: int) -> None:
@@ -30,4 +33,3 @@ def set_random_seed(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-

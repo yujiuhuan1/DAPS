@@ -81,6 +81,9 @@ class fggp(FederatedModel):
 
     def __init__(self, nets_list,args, transform):
         super(fggp, self).__init__(nets_list,args,transform)
+        self.daps_rel_enabled = bool(getattr(args, 'daps_rel', 1))
+        self.daps_drift_enabled = bool(getattr(args, 'daps_drift', 1))
+        self.daps_alpr_enabled = bool(getattr(args, 'daps_alpr', 1))
         self.global_centroids = []
         self.local_centroids = {}
         self.global_protos = []
@@ -114,6 +117,8 @@ class fggp(FederatedModel):
         return proto
 
     def _client_proto_weight(self, client_idx, label):
+        if not self.daps_rel_enabled:
+            return 1.0
         stats = self.local_proto_stats.get(client_idx, {}).get(int(label), None)
         if stats is None:
             return 1.0
@@ -160,7 +165,7 @@ class fggp(FederatedModel):
             new_anchor = F.normalize(new_anchor.view(1, -1), dim=1).squeeze(0)
 
             old_anchor = self.global_anchor_protos.get(label, None)
-            if old_anchor is None or self.epoch_index < warmup:
+            if old_anchor is None or self.epoch_index < warmup or not self.daps_drift_enabled:
                 anchor = new_anchor
                 quality = 1.0
             else:
@@ -169,7 +174,7 @@ class fggp(FederatedModel):
                 drift = max(0.0, 1.0 - cosine)
                 drift_gate = float(np.exp(-drift / drift_temp))
                 raw_quality = float(np.mean(weights))
-                quality = raw_quality / (raw_quality + 1.0)
+                quality = raw_quality / (raw_quality + 1.0) if self.daps_rel_enabled else 1.0
                 update_rate = (1.0 - momentum) * (0.25 + 0.75 * quality * drift_gate)
                 update_rate = min(max(update_rate, 0.01), 0.5)
                 anchor = F.normalize(((1.0 - update_rate) * old_anchor + update_rate * new_anchor).view(1, -1), dim=1).squeeze(0)
@@ -215,6 +220,8 @@ class fggp(FederatedModel):
         return anchors, labels
 
     def _daps_anchor_loss(self, feat, labels, train_mask, pseudo_labels, confidences):
+        if not self.daps_alpr_enabled:
+            return feat.sum() * 0.0
         anchors, anchor_labels = self._anchor_tensor()
         if anchors is None or len(anchor_labels) < 2:
             return feat.sum() * 0.0
@@ -363,7 +370,8 @@ class fggp(FederatedModel):
             pseudo_labels[train_loader.train_mask] = train_loader.y[train_loader.train_mask]
             confidences[train_loader.train_mask] = 1.0
             unique_labels = torch.unique(pseudo_labels)
-            proto = get_proto_norm_weighted(self.N_CLASS, feat, pseudo_labels, confidences, unique_labels)
+            extraction_weights = confidences if self.daps_rel_enabled else torch.ones_like(confidences)
+            proto = get_proto_norm_weighted(self.N_CLASS, feat, pseudo_labels, extraction_weights, unique_labels)
 
             tensor_dict = {}
             stats_dict = {}
@@ -474,4 +482,3 @@ class fggp(FederatedModel):
         tensor_dict, stats_dict = self._extract_local_prototypes(net, train_loader)
         self.local_protos[index] = tensor_dict
         self.local_proto_stats[index] = stats_dict
-

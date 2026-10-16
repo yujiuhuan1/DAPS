@@ -1,16 +1,14 @@
-import os
-import importlib
+from .fggp import fggp
+
 
 def get_all_models():
-    return [model.split('.')[0] for model in os.listdir('models')
-            if not model.find('__') > -1 and 'py' in model]
+    return ['fggp']
 
-names = {}
-for model in get_all_models():
-    mod = importlib.import_module('models.' + model)
-    class_name = {x.lower():x for x in mod.__dir__()}[model.replace('_', '')]
-    names[model] = getattr(mod, class_name)
 
-def get_model(nets_list,args, transform):
-    return names[args.model](nets_list,args,transform)
-
+def get_model(backbones_list, args, transform):
+    if args.model != 'fggp':
+        raise ValueError('This package contains the DAPS model only.')
+    if any(getattr(args, name, 1) != 1
+           for name in ('daps_rel', 'daps_drift', 'daps_alpr')):
+        raise ValueError('The complete DAPS model requires Rel., Drift, and ALPR.')
+    return fggp(backbones_list, args, transform)

@@ -53,4 +53,3 @@ class GCN_Net(torch.nn.Module):
                 break
             x = F.relu(F.dropout(x, p=self.dropout, training=self.training))
         return x
-

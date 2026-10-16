@@ -404,4 +404,3 @@ def scipysp_to_pytorchsp(sp_mx):
     pyt_sp_mx = torch.sparse.FloatTensor(torch.LongTensor(coords.T), torch.FloatTensor(values), torch.Size(shape))
 
     return pyt_sp_mx
-
